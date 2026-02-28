@@ -51,11 +51,21 @@ export function getFamilySettings(): FamilySettings {
     return { memberCount: 1, hasPet: false, isOnboarded: false, notifyDays: [90, 30, 7] };
   }
 
+  let notifyDays: number[] = [90, 30, 7];
+  try {
+    const parsed = JSON.parse(row.notify_days);
+    if (Array.isArray(parsed) && parsed.every((d) => typeof d === 'number')) {
+      notifyDays = parsed;
+    }
+  } catch {
+    // パース失敗時はデフォルト値を使用
+  }
+
   return {
     memberCount: row.member_count,
     hasPet: row.has_pet === 1,
     isOnboarded: row.is_onboarded === 1,
-    notifyDays: JSON.parse(row.notify_days),
+    notifyDays,
   };
 }
 

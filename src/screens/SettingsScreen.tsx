@@ -39,21 +39,22 @@ export default function SettingsScreen() {
       return;
     }
 
-    const header = '商品名,カテゴリ,数量,単位,推奨数量,賞味期限,登録日\n';
+    const header = '商品名,カテゴリ,数量,単位,推奨数量,賞味期限\n';
     const rows = items.map((item) =>
       [
-        `"${item.name}"`,
+        `"${item.name.replace(/"/g, '""')}"`,
         item.category,
         item.quantity,
         item.unit,
         item.recommendedQuantity,
         item.expiryDate !== '2099-12-31' ? item.expiryDate : '未設定',
-        item.createdAt.split('T')[0],
       ].join(',')
     );
     const csv = header + rows.join('\n');
 
-    const file = new File(Paths.document, 'bosai_stock.csv');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `bosai_backup_${timestamp}.csv`;
+    const file = new File(Paths.document, filename);
     file.create();
     file.write(csv);
 
@@ -67,6 +68,8 @@ export default function SettingsScreen() {
     } else {
       Alert.alert('共有不可', 'このデバイスでは共有できません。');
     }
+    // 共有後にキャッシュファイルを削除
+    setTimeout(() => { try { file.delete(); } catch { /* 削除失敗は無視 */ } }, 5000);
   }
 
   function handleResetData() {

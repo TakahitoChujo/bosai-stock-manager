@@ -53,11 +53,25 @@ export default function AddItemScreen() {
 
   async function handleScan() {
     if (!permission?.granted) {
-      const result = await requestPermission();
-      if (!result.granted) {
-        Alert.alert('カメラ許可が必要です', '設定からカメラアクセスを許可してください。');
-        return;
-      }
+      Alert.alert(
+        'カメラアクセスが必要です',
+        'バーコードをスキャンして商品情報を自動取得するために、カメラへのアクセスを許可してください。',
+        [
+          { text: 'キャンセル', style: 'cancel' },
+          {
+            text: '許可する',
+            onPress: async () => {
+              const result = await requestPermission();
+              if (!result.granted) {
+                Alert.alert('設定が必要です', '設定アプリからカメラへのアクセスを許可してください。');
+              } else {
+                setScanning(true);
+              }
+            },
+          },
+        ]
+      );
+      return;
     }
     setScanning(true);
   }
@@ -66,40 +80,63 @@ export default function AddItemScreen() {
     setScanning(false);
     setLookingUp(true);
     setScannedBarcode(data);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${data}.json`);
+      const res = await fetch(
+        `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(data)}.json`,
+        { signal: controller.signal }
+      );
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
       const json = await res.json();
       if (json.status === 1 && json.product) {
         const product = json.product;
-        const productName =
+        const rawName: string =
           product.product_name_ja ||
           product.product_name ||
           product.abbreviated_product_name ||
           '';
+        const productName = rawName.trim().slice(0, 255);
         if (productName) {
           setName(productName);
         } else {
-          Alert.alert('商品が見つかりません', 'バーコード: ' + data + '\n商品名を手動で入力してください。');
+          Alert.alert('商品が見つかりません', '商品名を手動で入力してください。');
         }
       } else {
-        Alert.alert('商品が見つかりません', 'バーコード: ' + data + '\n商品名を手動で入力してください。');
+        Alert.alert('商品が見つかりません', '商品名を手動で入力してください。');
       }
     } catch {
       Alert.alert('通信エラー', '商品情報を取得できませんでした。\n商品名を手動で入力してください。');
     } finally {
+      clearTimeout(timeoutId);
       setLookingUp(false);
     }
   }
 
+  function isValidDate(year: number, month: number, day: number): boolean {
+    if (year < 2000 || year > 2100) return false;
+    if (month < 1 || month > 12) return false;
+    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) daysInMonth[1] = 29;
+    return day >= 1 && day <= daysInMonth[month - 1];
+  }
+
   function handleSave() {
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       Alert.alert('入力エラー', '商品名を入力してください。');
+      return;
+    }
+    if (trimmedName.length > 255) {
+      Alert.alert('入力エラー', '商品名は255文字以内で入力してください。');
       return;
     }
     const year = parseInt(expiryYear);
     const month = parseInt(expiryMonth);
     const day = parseInt(expiryDay);
-    if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+    if (isNaN(year) || isNaN(month) || isNaN(day) || !isValidDate(year, month, day)) {
       Alert.alert('入力エラー', '賞味期限を正しく入力してください。');
       return;
     }
@@ -110,7 +147,7 @@ export default function AddItemScreen() {
     if (isEdit && editItem) {
       updateItem({
         ...editItem,
-        name: name.trim(),
+        name: trimmedName,
         category,
         quantity: parseFloat(quantity) || 0,
         unit,
@@ -120,7 +157,7 @@ export default function AddItemScreen() {
       });
     } else {
       addItem({
-        name: name.trim(),
+        name: trimmedName,
         category,
         quantity: parseFloat(quantity) || 0,
         unit,

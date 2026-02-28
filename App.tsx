@@ -11,8 +11,14 @@ export default function App() {
   useEffect(() => {
     initDB();
     loadAll();
-    requestNotificationPermission();
   }, []);
+
+  // オンボーディング完了後に通知権限をリクエスト
+  useEffect(() => {
+    if (settings.isOnboarded) {
+      requestNotificationPermission();
+    }
+  }, [settings.isOnboarded]);
 
   // 通知をアイテム・設定が変わるたびに再スケジュール
   useEffect(() => {

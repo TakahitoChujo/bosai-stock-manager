@@ -28,12 +28,14 @@ export function formatDaysLeft(days: number): string {
 }
 
 export function buildAmazonSearchUrl(query: string): string {
-  const tag = 'bosai-stock-22'; // アフィリエイトタグ（要変更）
-  const encoded = encodeURIComponent(query);
-  return `https://www.amazon.co.jp/s?k=${encoded}&tag=${tag}`;
+  const url = new URL('https://www.amazon.co.jp/s');
+  url.searchParams.set('k', query);
+  url.searchParams.set('tag', 'bosai-stock-22');
+  return url.toString();
 }
 
 export function buildRakutenSearchUrl(query: string): string {
-  const encoded = encodeURIComponent(query);
-  return `https://search.rakuten.co.jp/search/mall/${encoded}/`;
+  const url = new URL('https://search.rakuten.co.jp');
+  url.pathname = `/search/mall/${encodeURIComponent(query)}/`;
+  return url.toString();
 }
