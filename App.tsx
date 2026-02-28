@@ -1,20 +1,30 @@
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { initDB } from './src/database/db';
+import { useStore } from './src/store/useStore';
+import Navigation from './src/navigation';
+import { scheduleExpiryNotifications, requestNotificationPermission } from './src/utils/notifications';
 
 export default function App() {
+  const { loadAll, items, settings } = useStore();
+
+  useEffect(() => {
+    initDB();
+    loadAll();
+    requestNotificationPermission();
+  }, []);
+
+  // 通知をアイテム・設定が変わるたびに再スケジュール
+  useEffect(() => {
+    if (settings.isOnboarded && items.length > 0) {
+      scheduleExpiryNotifications(items, settings);
+    }
+  }, [items, settings]);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <StatusBar style="dark" />
+      <Navigation />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
