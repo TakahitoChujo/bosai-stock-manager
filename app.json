@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "bosai-stock-manager",
+    "name": "防災備蓄マネージャー",
     "slug": "bosai-stock-manager",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,10 +29,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bosai.stockmanager",
+      "bundleIdentifier": "com.toyland.bosaistock",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "バーコードスキャンのためにカメラを使用します。",
-        "NSPhotoLibraryUsageDescription": "備蓄品の写真を保存するために使用します。",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -44,15 +44,14 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.bosai.stockmanager",
+      "package": "com.toyland.bosaistock",
       "permissions": [
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
         "SCHEDULE_EXACT_ALARM",
         "USE_EXACT_ALARM",
         "VIBRATE",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {

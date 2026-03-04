@@ -23,8 +23,8 @@
     "production": {
       "ios": {
         "appleId": "jyojoappteam@gmail.com",
-        "ascAppId": "YOUR_ASC_APP_ID",
-        "appleTeamId": "YOUR_TEAM_ID",
+        "ascAppId": "6759919011",
+        "appleTeamId": "G2LHH59798",
         "language": "ja-JP",
         "sku": "bosai-stock-manager-001"
       }

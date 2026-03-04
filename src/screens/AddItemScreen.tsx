@@ -13,7 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Colors } from '../constants/colors';
 import { useStore } from '../store/useStore';
-import { CATEGORIES, CATEGORY_ICONS } from '../constants/checklist';
+import { CATEGORIES, CATEGORY_ICONS, RECOMMENDED_CHECKLIST, calcRecommended } from '../constants/checklist';
 import { Category } from '../types';
 import { RootStackParamList } from '../navigation';
 
@@ -24,11 +24,20 @@ const UNITS = ['本', '個', '缶', '食', '袋', '枚', '回分', 'セット', 
 export default function AddItemScreen() {
   const navigation = useNavigation();
   const route = useRoute<AddItemRoute>();
-  const { addItem, updateItem, items } = useStore();
+  const { addItem, updateItem, items, settings } = useStore();
 
   const editItemId = route.params?.editItemId;
   const editItem = editItemId ? items.find((i) => i.id === editItemId) : undefined;
   const isEdit = !!editItem;
+
+  function getDefaultsForCategory(cat: Category) {
+    const first = RECOMMENDED_CHECKLIST.find((i) => i.category === cat && !i.isPetItem);
+    if (!first) return { recommendedQty: '', unit: '個' };
+    return {
+      recommendedQty: String(calcRecommended(first, settings.memberCount)),
+      unit: first.unit,
+    };
+  }
 
   const parseExpiry = (d: string) => {
     const parts = d.split('-');
@@ -36,13 +45,25 @@ export default function AddItemScreen() {
   };
   const initExpiry = parseExpiry(editItem?.expiryDate ?? '2026-12-31');
 
+  const initCategory: Category = editItem?.category ?? (route.params?.category as Category) ?? '水';
+  const initDefaults = getDefaultsForCategory(initCategory);
+
   const [name, setName] = useState(editItem?.name ?? '');
-  const [category, setCategory] = useState<Category>(
-    editItem?.category ?? (route.params?.category as Category) ?? '水'
-  );
+  const [category, setCategory] = useState<Category>(initCategory);
   const [quantity, setQuantity] = useState(String(editItem?.quantity ?? 0));
-  const [recommendedQty, setRecommendedQty] = useState(String(editItem?.recommendedQuantity ?? ''));
-  const [unit, setUnit] = useState(editItem?.unit ?? '本');
+  const [recommendedQty, setRecommendedQty] = useState(
+    editItem ? String(editItem.recommendedQuantity) : initDefaults.recommendedQty
+  );
+  const [unit, setUnit] = useState(editItem?.unit ?? initDefaults.unit);
+
+  function handleCategoryChange(cat: Category) {
+    setCategory(cat);
+    if (!isEdit) {
+      const d = getDefaultsForCategory(cat);
+      setRecommendedQty(d.recommendedQty);
+      setUnit(d.unit);
+    }
+  }
   const [expiryYear, setExpiryYear] = useState(initExpiry.y);
   const [expiryMonth, setExpiryMonth] = useState(initExpiry.m);
   const [expiryDay, setExpiryDay] = useState(initExpiry.d);
@@ -224,7 +245,7 @@ export default function AddItemScreen() {
             <TouchableOpacity
               key={cat}
               style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
-              onPress={() => setCategory(cat as Category)}
+              onPress={() => handleCategoryChange(cat as Category)}
             >
               <Text style={styles.categoryBtnIcon}>{CATEGORY_ICONS[cat]}</Text>
               <Text style={[styles.categoryBtnText, category === cat && styles.categoryBtnTextActive]}>
